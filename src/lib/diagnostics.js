@@ -26,6 +26,7 @@ export async function diagnosticText() {
 		"",
 		"Settings",
 		`  default mode: ${s.defaultMode}`,
+		`  delay: ${s.delay ? `${s.delay}s` : "off"}`,
 		`  format: ${s.format}  quality: ${s.quality}`,
 		`  save: ${s.saveBehavior}`,
 		`  metadata: ${s.includeMetadata ? "on" : "off"}`,

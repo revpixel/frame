@@ -90,3 +90,48 @@ test("WebP metadata: simple VP8L becomes VP8X with XMP flag and valid RIFF size"
 	const xmp = new TextDecoder().decode(out);
 	assert.ok(xmp.includes("XMP ") && xmp.includes("A &quot;title&quot; &lt;tag&gt;"));
 });
+
+// ---------- capture delay countdown (no real waiting) ----------
+import { countdown } from "../src/lib/delay.js";
+
+function fakeClock() {
+	const clock = { now: 0 };
+	clock.sleep = async (ms) => {
+		clock.now += ms;
+	};
+	return clock;
+}
+
+test("countdown: ticks 3, 2, 1 one second apart, then finishes", async () => {
+	const clock = fakeClock();
+	const ticks = [];
+	const done = await countdown(3, { sleep: clock.sleep, onTick: (n) => ticks.push([n, clock.now]) });
+	assert.equal(done, true);
+	assert.deepEqual(ticks, [[3, 0], [2, 1000], [1, 2000]]);
+	assert.equal(clock.now, 3000);
+});
+
+test("countdown: 5 and 10 second delays take exactly that long", async () => {
+	for (const s of [5, 10]) {
+		const clock = fakeClock();
+		assert.equal(await countdown(s, { sleep: clock.sleep }), true);
+		assert.equal(clock.now, s * 1000);
+	}
+});
+
+test("countdown: zero seconds finishes immediately without ticking", async () => {
+	const clock = fakeClock();
+	const ticks = [];
+	assert.equal(await countdown(0, { sleep: clock.sleep, onTick: (n) => ticks.push(n) }), true);
+	assert.deepEqual(ticks, []);
+	assert.equal(clock.now, 0);
+});
+
+test("countdown: cancelling stops within one step and reports false", async () => {
+	const clock = fakeClock();
+	const ticks = [];
+	const done = await countdown(3, { sleep: clock.sleep, onTick: (n) => ticks.push(n), isCancelled: () => clock.now >= 1250 });
+	assert.equal(done, false);
+	assert.deepEqual(ticks, [3, 2]);
+	assert.ok(clock.now <= 1300, `stopped at ${clock.now}ms`);
+});

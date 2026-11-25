@@ -3,6 +3,7 @@
 
 import { getSettings, setSettings, MODES } from "./lib/settings.js";
 import { putCapture, deleteCapture, sweepOld } from "./lib/store.js";
+import { countdown } from "./lib/delay.js";
 
 const CAPTURE_INTERVAL = 550; // Chrome allows ~2 captureVisibleTab calls per second
 const MAX_TILES = 120;
@@ -12,6 +13,7 @@ const MAX_PART_AREA = 100_000_000; // stay well under Chrome's ~268M pixel canva
 
 let busy = false;
 let lastCaptureAt = 0;
+let pendingDelay = null; // { tabId, cancelled } while a delayed capture counts down
 
 class CaptureError extends Error {
 	constructor(code, message) {
@@ -34,6 +36,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 	}
 	if (msg?.type === "frame:area" && sender.tab) {
 		finishArea(sender.tab, msg.rect, msg.viewport);
+		return false;
+	}
+	if (msg?.type === "frame:delay-cancel") {
+		if (pendingDelay && sender.tab?.id === pendingDelay.tabId) pendingDelay.cancelled = true;
 		return false;
 	}
 	if (msg?.type === "frame:area-cancel") {
@@ -71,7 +77,10 @@ async function runCapture(tab, mode, respond) {
 	};
 	if (!MODES.includes(mode)) return reply({ ok: false, code: "bad-mode", message: "Unknown capture mode." });
 	// An open Select Area overlay doesn't block a new capture (the user may have abandoned it).
-	if (busy === true) return reply({ ok: false, code: "busy", message: "A capture is already in progress." });
+	if (busy === true) {
+		const message = pendingDelay ? "FRAME is counting down. Press Esc on the page to cancel." : "A capture is already in progress.";
+		return reply({ ok: false, code: "busy", message });
+	}
 	busy = true;
 	setSettings({ lastMode: mode }).catch(() => {});
 	sweepOld().catch(() => {});
@@ -79,6 +88,16 @@ async function runCapture(tab, mode, respond) {
 	const started = Date.now();
 	const diag = { mode, at: new Date(started).toISOString() };
 	try {
+		const { delay } = await getSettings();
+		if (delay > 0) {
+			diag.delay = delay;
+			const fresh = await delayCapture(tab, mode, delay, reply);
+			if (!fresh) {
+				diag.cancelled = true;
+				return;
+			}
+			tab = fresh; // the page may have changed during the countdown (that's the point)
+		}
 		if (mode === "visible") {
 			reply({ ok: true });
 			const shot = await captureTab(tab.windowId);
@@ -107,6 +126,53 @@ async function runCapture(tab, mode, respond) {
 		if (busy !== "area") busy = false;
 		chrome.storage.local.set({ lastCapture: diag }).catch(() => {});
 	}
+}
+
+/**
+ * Waits `seconds` before a capture, with a countdown pill on the page and on the
+ * toolbar badge. Nothing about the page is measured or changed until it ends.
+ * @returns the tab as it is now, or null if the user cancelled
+ */
+async function delayCapture(tab, mode, seconds, reply) {
+	let pill = true;
+	try {
+		await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["lib/countdown-page.js"] });
+	} catch (err) {
+		// Full Page and Select Area need the page anyway: fail now, while the popup can still say why.
+		// Visible can still work on some restricted pages, so it counts down on the badge alone.
+		if (mode !== "visible") throw new CaptureError("restricted", String(err?.message || err));
+		pill = false;
+	}
+	reply({ ok: true });
+
+	const onPage = (fn, arg = null) =>
+		pill
+			? chrome.scripting
+					.executeScript({ target: { tabId: tab.id }, func: (f, a) => window.__frameCountdown?.[f](a), args: [fn, arg] })
+					.catch(() => {})
+			: Promise.resolve();
+	const state = (pendingDelay = { tabId: tab.id, cancelled: false });
+	let finished;
+	try {
+		finished = await countdown(seconds, {
+			sleep,
+			isCancelled: () => state.cancelled,
+			onTick: (left) => {
+				setBadge(tab.id, String(left));
+				return onPage("set", left);
+			},
+		});
+	} finally {
+		pendingDelay = null;
+		setBadge(tab.id, "");
+		await onPage("remove"); // resolves once the pill is off the screen
+	}
+	if (!finished) return null;
+
+	const now = await chrome.tabs.get(tab.id).catch(() => null);
+	if (!now) throw new CaptureError("page-gone", "Tab closed during the countdown.");
+	if (!now.active || now.windowId !== tab.windowId) throw new CaptureError("tab-hidden", "Tab was switched during the countdown.");
+	return now;
 }
 
 async function finishArea(tab, rect, viewport) {

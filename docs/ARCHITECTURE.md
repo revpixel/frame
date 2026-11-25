@@ -11,6 +11,8 @@ src/
   lib/
     capture-page.js      injected into the page: measures, scrolls, hides fixed UI, restores
     select-area.js       injected into the page: the Select Area overlay
+    countdown-page.js    injected into the page: the capture-delay countdown pill (Esc cancels)
+    delay.js             countdown timing, with injectable sleep so tests don't wait
     store.js             IndexedDB hand-off of captures between worker and result page
     settings.js          defaults + chrome.storage.sync wrapper
     filename.js          filename template + OS-safe sanitising
@@ -27,10 +29,11 @@ tests/                   Puppeteer harness + fixture pages (dev only, not shippe
 ### Data flow
 
 1. Popup (or a keyboard shortcut) sends `{ mode }` to the service worker.
+   If a capture delay is set, the worker first injects `lib/countdown-page.js` (a corner pill that ignores the mouse, so the page can still be hovered and clicked), counts down on it and on the toolbar badge, then removes it and waits for it to leave the screen. Nothing is measured, scrolled or overlaid until then. Esc on the page cancels. Pages that refuse scripts fail immediately for Full Page / Select Area; Visible counts down on the badge alone.
 2. The worker injects `lib/capture-page.js` into the active tab, which prepares the page and answers questions ("scroll to y", "how big are you").
 3. The worker calls `chrome.tabs.captureVisibleTab` for each viewport, draws each tile straight into an `OffscreenCanvas` (so tiles are never all held in memory), and encodes PNG blobs.
 4. Blobs go into IndexedDB (extension-origin, local only). The worker opens `result/result.html?id=…`.
-5. The result page reads the blob, edits happen on a canvas, and saving / copying use browser APIs on that page. The stored capture is deleted when the result tab closes (and anything older than 24 hours is swept on every new capture).
+5. The result page reads the blob. Every edit (crop, redact, and each annotation) is one entry in a per-part edit list that is replayed in order onto the original capture, so undo is "drop the last entry" and Redact → Annotate → Crop just works. Annotations are drawn straight into the image (no layers); a lightweight preview canvas at screen resolution shows a shape while it's being drawn. Edits happen on a canvas, and saving / copying use browser APIs on that page. The stored capture is deleted when the result tab closes (and anything older than 24 hours is swept on every new capture).
 
 Nothing leaves the machine. There is no `fetch`, no remote URL in any page, and the default MV3 content-security policy blocks remote code.
 
@@ -69,7 +72,7 @@ That is the whole list. Deliberately **not** requested:
 
 ## v1 scope
 
-**In v1:** Full Page, Select Area, Visible; result viewer with copy, PNG/JPEG/WebP, crop, redact (solid or pixelate), undo; filename templates; optional embedded metadata (PNG text chunks, JPEG comment, WebP XMP); settings; About/Help with GitHub links; diagnostic info; keyboard shortcuts.
+**In v1:** Full Page, Select Area, Visible; capture delay (Off/3/5/10 s); result viewer with copy, PNG/JPEG/WebP, crop, redact (solid or pixelate), annotate (arrow, rectangle, freehand, text, highlight), undo; filename templates; optional embedded metadata (PNG text chunks, JPEG comment, WebP XMP); settings; About/Help with GitHub links; diagnostic info; keyboard shortcuts.
 
 **Deferred (deliberately):**
 

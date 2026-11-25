@@ -10,7 +10,7 @@ FRAME doesn't collect, transmit, sell or share any data. There's nothing to opt 
 
 ## What FRAME stores
 
-- **Settings** (capture mode, format, quality, save behavior, filename template, metadata on/off) in Chrome's extension storage. If you use Chrome Sync, Chrome syncs these like any extension setting.
+- **Settings** (capture mode, capture delay, format, quality, save behavior, filename template, metadata on/off) in Chrome's extension storage. If you use Chrome Sync, Chrome syncs these like any extension setting.
 - **A summary of the last capture** (mode, image size, number of screens, timing, any error code) to help with bug reports. It contains no URL, title or image.
 
 ## Network

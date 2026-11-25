@@ -3,6 +3,7 @@
 
 export const MODES = ["full", "area", "visible"];
 export const FORMATS = ["png", "jpeg", "webp"];
+export const DELAYS = [0, 3, 5, 10]; // seconds before a capture starts
 
 export const DEFAULTS = Object.freeze({
 	defaultMode: "last", // "last" | "full" | "area" | "visible"
@@ -12,6 +13,7 @@ export const DEFAULTS = Object.freeze({
 	filenameTemplate: "{domain}_{date}_{time}",
 	includeMetadata: false,
 	saveBehavior: "downloads", // "downloads" | "ask"
+	delay: 0, // capture delay in seconds, one of DELAYS; set from the popup
 });
 
 export async function getSettings() {
@@ -24,6 +26,7 @@ export async function getSettings() {
 	if (typeof s.filenameTemplate !== "string" || !s.filenameTemplate.trim()) s.filenameTemplate = DEFAULTS.filenameTemplate;
 	if (s.saveBehavior !== "ask") s.saveBehavior = "downloads";
 	s.includeMetadata = s.includeMetadata === true;
+	s.delay = DELAYS.includes(Number(s.delay)) ? Number(s.delay) : 0;
 	return s;
 }
 

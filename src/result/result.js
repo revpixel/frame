@@ -17,7 +17,7 @@ let capture; // record from IndexedDB
 let parts = []; // [{ source: ImageBitmap, ops: [] }]
 let active = 0;
 let current = null; // canvas holding the rendered current part
-let tool = null; // null | { kind: "crop"|"redact", rects: [] }
+let tool = null; // null | { kind: "crop"|"redact", rects: [] } | { kind: "annotate" }
 let format = "png";
 
 // ---------- loading ----------
@@ -103,6 +103,10 @@ function applyOp(c, op) {
 		out.getContext("2d").drawImage(c, x, y, w, h, 0, 0, w, h);
 		return out;
 	}
+	if (op.kind === "annotate") {
+		drawAnnotation(c.getContext("2d"), op);
+		return c;
+	}
 	if (op.kind === "redact") {
 		const g = c.getContext("2d");
 		for (const r of op.rects) {
@@ -161,14 +165,28 @@ function startTool(kind) {
 	tool = { kind, rects: [] };
 	document.body.classList.add("editing");
 	$("editbar").hidden = false;
+	const annotating = kind === "annotate";
+	document.body.classList.toggle("annotating", annotating);
+	$("annot").hidden = !annotating;
+	$("annot-done").hidden = !annotating;
+	$("edit-hint").hidden = annotating;
+	$("edit-cancel").hidden = annotating;
+	$("edit-apply").hidden = annotating;
 	$("redact-style").hidden = kind !== "redact";
-	$("edit-hint").textContent = kind === "crop" ? "Drag to choose the area to keep." : "Drag over anything you want hidden. Add as many boxes as you need.";
 	$(kind).classList.add("active");
+	if (annotating) return selectShape(annot.shape);
+	$("edit-hint").textContent = kind === "crop" ? "Drag to choose the area to keep." : "Drag over anything you want hidden. Add as many boxes as you need.";
 	updateApply();
 }
 
 function cancelTool() {
 	if (!tool) return;
+	if (tool.kind === "annotate") {
+		commitText();
+		stroke = null;
+		clearPreview();
+		document.body.classList.remove("annotating", "shape-text");
+	}
 	$(tool.kind).classList.remove("active");
 	tool = null;
 	overlay.replaceChildren();
@@ -177,6 +195,7 @@ function cancelTool() {
 }
 
 function applyTool() {
+	if (tool?.kind === "annotate") return commitText(); // annotations apply as they're drawn
 	if (!tool || !tool.rects.length) return;
 	const part = parts[active];
 	if (tool.kind === "crop") part.ops.push({ kind: "crop", rect: tool.rects[0] });
@@ -212,6 +231,7 @@ function placeBox(el, r) {
 let drawing = null;
 
 overlay.addEventListener("pointerdown", (e) => {
+	if (tool?.kind === "annotate") return annotDown(e);
 	if (!tool || e.button !== 0 || e.target.classList.contains("x")) return;
 	e.preventDefault();
 	overlay.setPointerCapture(e.pointerId);
@@ -232,6 +252,7 @@ overlay.addEventListener("pointerdown", (e) => {
 });
 
 overlay.addEventListener("pointermove", (e) => {
+	if (tool?.kind === "annotate") return annotMove(e);
 	if (!drawing) return;
 	const p = toImage(e);
 	const s = drawing.start;
@@ -247,6 +268,7 @@ overlay.addEventListener("pointermove", (e) => {
 });
 
 overlay.addEventListener("pointerup", () => {
+	if (tool?.kind === "annotate") return annotUp();
 	if (!drawing) return;
 	const { el, dims, rect } = drawing;
 	drawing = null;
@@ -283,16 +305,251 @@ document.querySelectorAll('input[name="rstyle"]').forEach((i) =>
 
 $("crop").addEventListener("click", () => startTool("crop"));
 $("redact").addEventListener("click", () => startTool("redact"));
+$("annotate").addEventListener("click", () => startTool("annotate"));
+$("annot-done").addEventListener("click", cancelTool);
 $("edit-cancel").addEventListener("click", cancelTool);
 $("edit-apply").addEventListener("click", applyTool);
 $("undo").addEventListener("click", undo);
 
 function undo() {
-	if (tool) return cancelTool();
+	if (tool?.kind === "annotate") {
+		// Undo stays in Annotate: first drop an unfinished text box, then the last edit.
+		if (textBox) return removeTextBox();
+	} else if (tool) return cancelTool();
 	const part = parts[active];
 	if (!part?.ops.length) return;
 	part.ops.pop();
 	render();
+}
+
+// ---------- annotate ----------
+// Each finished arrow, rectangle, stroke, text or highlight is one entry in the
+// part's edit list, drawn straight into the image (no layers). Undo removes the
+// last entry. Crop and redact before or after just work, because the list is
+// replayed in order.
+
+const ANNOT_FONT = '"Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif';
+const HIGHLIGHT_ALPHA = 0.35;
+const annot = { shape: "arrow", color: "#ef4444", width: 4, size: 24 }; // width/size in screen px at 100%
+const preview = $("preview");
+let stroke = null; // annotation being drawn
+let textBox = null; // { input, at, size, color } while text is being typed
+
+// Sizes are picked in screen pixels and stored in image pixels, so a "medium"
+// line looks the same on a HiDPI capture as on a normal one.
+const px = (cssPx) => Math.max(1, Math.round(cssPx * devicePixelRatio));
+
+function drawAnnotation(g, a) {
+	g.save();
+	g.lineCap = "round";
+	g.lineJoin = "round";
+	g.strokeStyle = g.fillStyle = a.color;
+	g.lineWidth = a.width;
+	if (a.shape === "arrow") drawArrow(g, a.points[0], a.points[1], a.width);
+	else if (a.shape === "rect") g.strokeRect(a.rect.x, a.rect.y, a.rect.w, a.rect.h);
+	else if (a.shape === "highlight") {
+		g.globalAlpha = HIGHLIGHT_ALPHA;
+		g.fillRect(a.rect.x, a.rect.y, a.rect.w, a.rect.h);
+	} else if (a.shape === "pen") {
+		const [p0, ...rest] = a.points;
+		g.beginPath();
+		g.moveTo(p0.x, p0.y);
+		if (!rest.length) g.lineTo(p0.x + 0.01, p0.y); // a click leaves a dot
+		for (const p of rest) g.lineTo(p.x, p.y);
+		g.stroke();
+	} else if (a.shape === "text") {
+		g.font = `600 ${a.size}px ${ANNOT_FONT}`;
+		g.textBaseline = "top";
+		g.fillText(a.text, a.at.x, a.at.y);
+	}
+	g.restore();
+}
+
+function drawArrow(g, from, to, width) {
+	const dx = to.x - from.x;
+	const dy = to.y - from.y;
+	const len = Math.hypot(dx, dy) || 1;
+	const head = Math.min(len, Math.max(width * 4, 12));
+	const ux = dx / len;
+	const uy = dy / len;
+	// End the shaft inside the head so its round cap doesn't poke out past the tip.
+	g.beginPath();
+	g.moveTo(from.x, from.y);
+	g.lineTo(to.x - ux * head * 0.8, to.y - uy * head * 0.8);
+	g.stroke();
+	const spread = head * 0.55;
+	const hx = to.x - ux * head;
+	const hy = to.y - uy * head;
+	g.beginPath();
+	g.moveTo(to.x, to.y);
+	g.lineTo(hx - uy * spread, hy + ux * spread);
+	g.lineTo(hx + uy * spread, hy - ux * spread);
+	g.closePath();
+	g.fill();
+}
+
+function selectShape(shape) {
+	commitText();
+	annot.shape = shape;
+	document.body.classList.toggle("shape-text", shape === "text");
+	for (const b of $("shapes").children) b.setAttribute("aria-pressed", String(b.dataset.shape === shape));
+	// Only the controls that matter for this tool.
+	$("widths").hidden = shape === "text" || shape === "highlight";
+	$("sizes").hidden = shape !== "text";
+	syncControls();
+}
+
+function syncControls() {
+	const swatches = [...$("colors").querySelectorAll("button")];
+	for (const b of swatches) b.setAttribute("aria-pressed", String(b.dataset.color === annot.color));
+	$("colors").querySelector(".custom").setAttribute("aria-pressed", String(!swatches.some((b) => b.dataset.color === annot.color)));
+	for (const b of $("widths").children) b.setAttribute("aria-pressed", String(Number(b.dataset.width) === annot.width));
+	for (const b of $("sizes").children) b.setAttribute("aria-pressed", String(Number(b.dataset.size) === annot.size));
+	if (textBox) {
+		textBox.color = annot.color;
+		textBox.size = px(annot.size);
+		styleTextBox();
+	}
+}
+
+function setColor(color) {
+	annot.color = color;
+	syncControls();
+	textBox?.input.focus();
+}
+
+for (const b of $("shapes").children) b.addEventListener("click", () => selectShape(b.dataset.shape));
+for (const b of $("colors").querySelectorAll("button")) b.addEventListener("click", () => setColor(b.dataset.color));
+$("color-custom").addEventListener("input", (e) => setColor(e.target.value));
+for (const b of $("widths").children)
+	b.addEventListener("click", () => {
+		annot.width = Number(b.dataset.width);
+		syncControls();
+	});
+for (const b of $("sizes").children)
+	b.addEventListener("click", () => {
+		annot.size = Number(b.dataset.size);
+		syncControls();
+		textBox?.input.focus();
+	});
+
+function annotDown(e) {
+	if (e.button !== 0 || e.target === textBox?.input) return;
+	e.preventDefault();
+	if (textBox) return commitText(); // clicking elsewhere finishes the text being typed
+	const p = toImage(e);
+	if (annot.shape === "text") return openTextBox(p);
+	overlay.setPointerCapture(e.pointerId);
+	const base = { kind: "annotate", shape: annot.shape, color: annot.color, width: px(annot.width) };
+	if (annot.shape === "pen") stroke = { ...base, points: [p] };
+	else if (annot.shape === "arrow") stroke = { ...base, points: [p, p] };
+	else stroke = { ...base, start: p, rect: { x: p.x, y: p.y, w: 0, h: 0 } };
+	sizePreview();
+	drawPreview();
+}
+
+function annotMove(e) {
+	if (!stroke) return;
+	const p = toImage(e);
+	if (stroke.shape === "pen") {
+		const last = stroke.points[stroke.points.length - 1];
+		if (Math.hypot(p.x - last.x, p.y - last.y) < 1.5) return;
+		stroke.points.push(p);
+	} else if (stroke.shape === "arrow") stroke.points[1] = p;
+	else {
+		const s0 = stroke.start;
+		stroke.rect = { x: Math.min(s0.x, p.x), y: Math.min(s0.y, p.y), w: Math.abs(p.x - s0.x), h: Math.abs(p.y - s0.y) };
+	}
+	drawPreview();
+}
+
+function annotUp() {
+	if (!stroke) return;
+	const a = stroke;
+	stroke = null;
+	clearPreview();
+	delete a.start;
+	const [p0, p1] = a.points || [];
+	const big = a.shape === "pen" || (a.shape === "arrow" ? Math.hypot(p1.x - p0.x, p1.y - p0.y) >= 3 : a.rect.w >= 3 && a.rect.h >= 3);
+	if (big) commitAnnotation(a);
+}
+
+function commitAnnotation(op) {
+	parts[active].ops.push(op);
+	drawAnnotation(current.getContext("2d"), op);
+	view.getContext("2d").drawImage(current, 0, 0);
+	$("undo").disabled = false;
+}
+
+// The preview canvas matches the on-screen size of the image, not its full
+// resolution, so drawing stays smooth on very tall full-page captures.
+function sizePreview() {
+	const b = overlay.getBoundingClientRect();
+	preview.width = Math.max(1, Math.round(b.width * devicePixelRatio));
+	preview.height = Math.max(1, Math.round(b.height * devicePixelRatio));
+}
+
+function drawPreview() {
+	const g = preview.getContext("2d");
+	g.setTransform(1, 0, 0, 1, 0, 0);
+	g.clearRect(0, 0, preview.width, preview.height);
+	if (!stroke) return;
+	const k = preview.width / view.width;
+	g.setTransform(k, 0, 0, k, 0, 0);
+	drawAnnotation(g, stroke);
+}
+
+function clearPreview() {
+	const g = preview.getContext("2d");
+	g.setTransform(1, 0, 0, 1, 0, 0);
+	g.clearRect(0, 0, preview.width, preview.height);
+}
+
+function openTextBox(at) {
+	const input = document.createElement("input");
+	input.type = "text";
+	input.className = "text-input";
+	input.maxLength = 200;
+	input.setAttribute("aria-label", "Annotation text");
+	textBox = { input, at, size: px(annot.size), color: annot.color };
+	styleTextBox();
+	input.addEventListener("keydown", (e) => {
+		// Typing must never trigger viewer shortcuts (c, r, z, a, Ctrl+Z...).
+		e.stopPropagation();
+		if (e.key === "Enter") {
+			e.preventDefault();
+			commitText();
+		} else if (e.key === "Escape") {
+			e.preventDefault();
+			removeTextBox();
+		}
+	});
+	overlay.appendChild(input);
+	input.focus();
+}
+
+function styleTextBox() {
+	const k = overlay.getBoundingClientRect().width / view.width; // screen px per image px
+	Object.assign(textBox.input.style, {
+		left: `${(textBox.at.x / view.width) * 100}%`,
+		top: `${(textBox.at.y / view.height) * 100}%`,
+		fontSize: `${textBox.size * k}px`,
+		height: `${textBox.size * k * 1.2}px`,
+		color: textBox.color,
+	});
+}
+
+function removeTextBox() {
+	textBox?.input.remove();
+	textBox = null;
+}
+
+function commitText() {
+	if (!textBox) return;
+	const { input, at, size, color } = textBox;
+	const text = input.value.trim();
+	removeTextBox();
+	if (text) commitAnnotation({ kind: "annotate", shape: "text", text, at, size, color });
 }
 
 // ---------- output ----------
@@ -409,7 +666,9 @@ document.addEventListener("keydown", (e) => {
 	else if (!mod && !e.altKey && k === "c") startTool("crop");
 	else if (!mod && !e.altKey && k === "r") startTool("redact");
 	else if (!mod && !e.altKey && k === "z") $("zoom").click();
+	else if (!mod && !e.altKey && k === "a") startTool("annotate");
 	else if (e.key === "Escape" && tool) cancelTool();
+	else if (e.key === "Enter" && tool?.kind === "annotate") return;
 	else if (e.key === "Enter" && tool) applyTool();
 	else return;
 	e.preventDefault();

@@ -5,7 +5,7 @@
   "description": "Dev tooling for FRAME. The extension itself (src/) has no dependencies.",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test --test-concurrency=1 tests/",
     "icons": "node tools/icons.mjs",
     "screens": "node tools/screens.mjs",
     "package": "node tools/package.mjs"

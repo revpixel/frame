@@ -16,12 +16,15 @@ Part of [Cyberdyne Network](https://cyberdynenetwork.com/).
 | **Select area** | Dims the page; drag a rectangle, adjust it, press Enter. Esc cancels. |
 | **Visible** | Captures what you can see, immediately. |
 
+**Delay**: the popup's `DELAY  Off · 3s · 5s · 10s` row waits before capturing, so you can open a menu, hover a tooltip or put the pointer somewhere useful first. A small countdown sits in the corner of the page (it's never in the screenshot) and on the toolbar icon; press Esc to cancel. For Select Area, the selection appears after the countdown. Your choice is remembered and also applies to the keyboard shortcuts. Off by default.
+
 After a capture, a result tab opens where you can:
 
 - **Copy** to the clipboard
 - **Save** as PNG, JPEG or WebP
 - **Crop**
 - **Redact**: drag boxes over anything sensitive, as solid blocks or heavy pixelation
+- **Annotate**: arrow, rectangle, freehand, text and highlight, with a few colours (red, yellow, blue, green, white, black, or pick your own), three stroke widths and three text sizes. Annotations become part of the image, just like crop and redact.
 - **Undo** any edit
 
 ### Keyboard shortcuts
@@ -33,11 +36,12 @@ After a capture, a result tab opens where you can:
 | `Alt+Shift+A` | Select area |
 | `Alt+Shift+V` | Visible |
 
-Change them at `chrome://extensions/shortcuts`. In the result tab: `C` crop, `R` redact, `Z` zoom, `Ctrl+Z` undo, `Ctrl+C` copy, `Ctrl+S` save (`Ctrl+Shift+S` saves all parts).
+Change them at `chrome://extensions/shortcuts`. In the result tab: `C` crop, `R` redact, `A` annotate, `Z` zoom, `Ctrl+Z` undo, `Ctrl+C` copy, `Ctrl+S` save (`Ctrl+Shift+S` saves all parts).
 
 ### Settings
 
 - **Default capture mode**: the one the popup highlights (Enter repeats it). Defaults to the last one you used.
+- **Delay** is set in the popup itself (Off, 3, 5 or 10 seconds) and remembered.
 - **Default format** and **JPEG/WebP quality**.
 - **Save behavior**: straight to Downloads, or ask where to save. "Ask" remembers the last folder, so pointing it at a OneDrive, Google Drive, Dropbox or NAS folder once is all the "cloud integration" you need.
 - **Filename template**: tokens `{domain}` `{title}` `{date}` `{time}` `{mode}`. Default `{domain}_{date}_{time}` → `github.com_2026-11-25_09-41-03.png`. Names are cleaned up so they're valid on Windows, macOS and Linux.
@@ -60,7 +64,7 @@ Saving uses the browser's normal download / save dialog, and copying uses the st
 ## Limits
 
 - Chrome doesn't let extensions run on `chrome://` pages, the Chrome Web Store, or other extensions' pages. FRAME says so and offers a Visible capture where possible.
-- Stay on the tab during a full-page capture; switching tabs stops it cleanly.
+- Stay on the tab during a full-page capture or a countdown; switching tabs stops it cleanly.
 - Very long pages are capped at 150,000 px (or 120 screens). Infinite-scroll feeds are captured as far as they had loaded.
 - Select Area works within the visible part of the page. For a taller region, take a Full Page capture and crop it.
 
@@ -85,11 +89,13 @@ src/
   lib/
     capture-page.js    injected for Full Page: measure, scroll, hide fixed UI, restore
     select-area.js     injected for Select Area: the overlay
+    countdown-page.js  injected while a delayed capture counts down
+    delay.js           the countdown timing (unit-tested without real waiting)
     store.js           hands captures to the result tab via IndexedDB
     settings.js  filename.js  metadata.js  diagnostics.js
   popup/  result/  options/
   fonts/  icons/
-tests/                 Puppeteer end-to-end tests with fixture pages + unit tests
+tests/                 Puppeteer end-to-end tests (capture, delay, annotate) with fixture pages + unit tests
 tools/                 icon rendering, screenshots, packaging
 ```
 

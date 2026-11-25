@@ -35,6 +35,21 @@ header { display: flex; align-items: baseline; gap: 10px; padding: 0 4px 14px; }
 .mode small { color: var(--muted); font-size: 12px; }
 .mode.working { pointer-events: none; opacity: 0.6; }
 
+.delay { display: flex; align-items: center; gap: 2px; margin-top: 10px; padding: 0 4px; }
+.delay-label { margin-right: 8px; font-size: 10px; letter-spacing: 0.14em; color: var(--faint); }
+.delay button {
+	height: 24px;
+	padding: 0 9px;
+	border: 1px solid transparent;
+	border-radius: 7px;
+	background: transparent;
+	color: var(--muted);
+	font: 500 11.5px/1 var(--font-mono);
+	cursor: pointer;
+}
+.delay button:hover { color: var(--text); background: var(--surface-hover); }
+.delay button[aria-checked="true"] { color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 45%, transparent); background: color-mix(in srgb, var(--cyan) 8%, transparent); }
+
 .error {
 	display: grid;
 	gap: 8px;
