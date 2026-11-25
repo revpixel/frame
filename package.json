@@ -1,0 +1,16 @@
+{
+  "name": "frame-extension",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Dev tooling for FRAME. The extension itself (src/) has no dependencies.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "icons": "node tools/icons.mjs",
+    "screens": "node tools/screens.mjs",
+    "package": "node tools/package.mjs"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.0.0"
+  }
+}

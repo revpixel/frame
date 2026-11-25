@@ -1,0 +1,18 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Long page</title>
+<style>
+html { scroll-behavior: smooth; }
+body { margin: 0; }
+#hdr { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: #ff00ff; z-index: 10; }
+#foot { position: fixed; bottom: 0; left: 0; right: 0; height: 40px; background: #00ffff; z-index: 10; }
+#sticky { position: sticky; top: 0; height: 50px; background: #ffff00; z-index: 5; }
+</style>
+<script src="bands.js"></script>
+</head><body>
+<div id="hdr"></div>
+<div id="a"></div>
+<div id="sticky"></div>
+<div id="b"></div>
+<div id="foot"></div>
+<script>makeBands(a, 10, 250); makeBands(b, 30, 250); document.querySelectorAll('#b .band').forEach((d, j) => { d.style.background = bandColor(10 + j); d.dataset.i = 10 + j; });</script>
+</body></html>

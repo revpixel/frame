@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "FRAME",
+  "short_name": "FRAME",
+  "version": "1.0.0",
+  "description": "Screenshots. That's it. Full page, selected area or visible view. Local only: no accounts, no uploads, no tracking.",
+  "homepage_url": "https://github.com/revpixel/frame",
+  "minimum_chrome_version": "116",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "FRAME",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+F" },
+      "description": "Open FRAME"
+    },
+    "capture-full": {
+      "suggested_key": { "default": "Alt+Shift+P" },
+      "description": "Capture full page"
+    },
+    "capture-area": {
+      "suggested_key": { "default": "Alt+Shift+A" },
+      "description": "Select area"
+    },
+    "capture-visible": {
+      "suggested_key": { "default": "Alt+Shift+V" },
+      "description": "Capture visible"
+    }
+  }
+}

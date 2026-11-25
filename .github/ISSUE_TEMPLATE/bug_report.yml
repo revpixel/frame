@@ -1,0 +1,29 @@
+name: Bug report
+description: Something didn't capture, save or look right.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what did you get?
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Capture mode
+      options: [Full page, Select area, Visible, Not capture related]
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page (optional)
+      description: A public URL that shows the problem, only if you're comfortable sharing it.
+  - type: textarea
+    id: diag
+    attributes:
+      label: Diagnostic info
+      description: FRAME settings → About → Copy diagnostic info, then paste here. It contains no URLs or page content.
+      render: text

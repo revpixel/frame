@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>FRAME</title>
+		<link rel="stylesheet" href="../theme.css" />
+		<link rel="stylesheet" href="popup.css" />
+		<script type="module" src="popup.js"></script>
+	</head>
+	<body>
+		<header>
+			<span class="brand">FRAME</span>
+			<span class="tag">Screenshots. That's it.</span>
+		</header>
+
+		<main class="modes">
+			<button class="mode" data-mode="full" type="button">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2" /><path d="M8.5 7h7M8.5 10.5h7M8.5 14h7M8.5 17.5h4" /></svg>
+				<span class="label"><b>FULL PAGE</b><small>Capture the entire page</small></span>
+			</button>
+			<button class="mode" data-mode="area" type="button">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" /><rect x="8" y="8" width="8" height="8" rx="1" /></svg>
+				<span class="label"><b>SELECT AREA</b><small>Choose exactly what you want</small></span>
+			</button>
+			<button class="mode" data-mode="visible" type="button">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="14" rx="2" /><path d="M8 21h8M12 18v3" /></svg>
+				<span class="label"><b>VISIBLE</b><small>Capture the current view</small></span>
+			</button>
+		</main>
+
+		<p class="error" role="alert" hidden>
+			<span class="msg"></span>
+			<button class="btn fallback" type="button" hidden>Capture visible instead</button>
+		</p>
+
+		<footer>
+			<a href="../options/options.html" target="_blank" class="foot-link" id="settings">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
+				Settings
+			</a>
+			<span class="local mono"><span class="dot" aria-hidden="true"></span>LOCAL ONLY</span>
+		</footer>
+	</body>
+</html>

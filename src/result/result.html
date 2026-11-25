@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>FRAME</title>
+		<link rel="icon" href="../icons/icon-32.png" />
+		<link rel="stylesheet" href="../theme.css" />
+		<link rel="stylesheet" href="result.css" />
+		<script type="module" src="result.js"></script>
+	</head>
+	<body>
+		<header class="bar">
+			<div class="left">
+				<span class="brand">FRAME</span>
+				<span class="info mono" id="info"></span>
+			</div>
+
+			<div class="tools" id="tools">
+				<button class="btn ghost" id="crop" type="button" title="Crop (C)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14" /></svg>Crop
+				</button>
+				<button class="btn ghost" id="redact" type="button" title="Redact (R)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="1.5" fill="currentColor" stroke="none" opacity=".85" /><path d="M3 4h18M3 20h12" /></svg>Redact
+				</button>
+				<button class="btn ghost" id="undo" type="button" title="Undo (Ctrl+Z)" disabled>
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></svg>Undo
+				</button>
+				<button class="btn ghost" id="zoom" type="button" title="Toggle fit / actual size (Z)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3M8 11h6M11 8v6" /></svg><span>100%</span>
+				</button>
+			</div>
+
+			<div class="out">
+				<button class="btn" id="copy" type="button" title="Copy to clipboard (Ctrl+C)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>Copy
+				</button>
+				<div class="save">
+					<button class="btn primary" id="save" type="button" title="Save (Ctrl+S)">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>Save
+					</button>
+					<select id="format" aria-label="Format">
+						<option value="png">PNG</option>
+						<option value="jpeg">JPEG</option>
+						<option value="webp">WebP</option>
+					</select>
+				</div>
+				<button class="btn" id="save-all" type="button" hidden>Save all parts</button>
+			</div>
+		</header>
+
+		<div class="editbar" id="editbar" hidden>
+			<span class="hint" id="edit-hint"></span>
+			<span class="redact-style" id="redact-style" hidden>
+				<label><input type="radio" name="rstyle" value="solid" checked /> Solid</label>
+				<label><input type="radio" name="rstyle" value="pixelate" /> Pixelate</label>
+			</span>
+			<span class="spacer"></span>
+			<button class="btn ghost" id="edit-cancel" type="button">Cancel <kbd>Esc</kbd></button>
+			<button class="btn primary" id="edit-apply" type="button" disabled>Apply <kbd>Enter</kbd></button>
+		</div>
+
+		<nav class="parts" id="parts" hidden></nav>
+		<p class="notice" id="notice" hidden></p>
+
+		<main class="stage" id="stage">
+			<div class="frame" id="frame">
+				<canvas id="view"></canvas>
+				<div class="overlay" id="overlay"></div>
+			</div>
+			<p class="empty" id="empty" hidden></p>
+		</main>
+
+		<div class="toast" id="toast" role="status" aria-live="polite"></div>
+	</body>
+</html>

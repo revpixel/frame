@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>FRAME · Settings</title>
+		<link rel="icon" href="../icons/icon-32.png" />
+		<link rel="stylesheet" href="../theme.css" />
+		<link rel="stylesheet" href="options.css" />
+		<script type="module" src="options.js"></script>
+	</head>
+	<body>
+		<div class="shell">
+			<header>
+				<span class="brand big">FRAME</span>
+				<span class="tag">Screenshots. That's it.</span>
+				<span class="ver mono" id="version"></span>
+			</header>
+
+			<section>
+				<h2><span class="path">/</span>Capture</h2>
+				<div class="row">
+					<label for="defaultMode">Default capture mode<small>Highlighted in the popup; press Enter to use it.</small></label>
+					<select id="defaultMode">
+						<option value="last">Remember last used</option>
+						<option value="full">Full page</option>
+						<option value="area">Select area</option>
+						<option value="visible">Visible</option>
+					</select>
+				</div>
+			</section>
+
+			<section>
+				<h2><span class="path">/</span>Saving</h2>
+				<div class="row">
+					<label for="format">Default format</label>
+					<select id="format">
+						<option value="png">PNG (lossless)</option>
+						<option value="jpeg">JPEG</option>
+						<option value="webp">WebP</option>
+					</select>
+				</div>
+				<div class="row" id="quality-row">
+					<label for="quality">JPEG / WebP quality<small>Higher is sharper and larger.</small></label>
+					<span class="range"><input type="range" id="quality" min="50" max="100" step="1" /><output id="quality-out" class="mono"></output></span>
+				</div>
+				<div class="row">
+					<label for="saveBehavior">Save behavior<small>Point "Ask" at a synced OneDrive, Drive or Dropbox folder once; FRAME's dialog remembers it.</small></label>
+					<select id="saveBehavior">
+						<option value="downloads">Save to Downloads</option>
+						<option value="ask">Ask where to save</option>
+					</select>
+				</div>
+				<div class="row stack">
+					<label for="filenameTemplate">Filename template<small>Tokens: <code>{domain}</code> <code>{title}</code> <code>{date}</code> <code>{time}</code> <code>{mode}</code></small></label>
+					<div class="tmpl">
+						<input type="text" id="filenameTemplate" spellcheck="false" autocomplete="off" />
+						<button class="btn ghost" id="tmpl-reset" type="button">Reset</button>
+					</div>
+					<p class="preview mono">Example: <span id="tmpl-preview"></span></p>
+				</div>
+				<div class="row">
+					<label for="includeMetadata">Include capture metadata<small>Writes the page URL, title and time as text inside the image file (not on the image). Off by default.</small></label>
+					<input type="checkbox" id="includeMetadata" class="switch" />
+				</div>
+			</section>
+
+			<section>
+				<h2><span class="path">/</span>Shortcuts</h2>
+				<ul class="keys" id="shortcuts"></ul>
+				<p class="note">Change them at <a href="#" id="open-shortcuts">chrome://extensions/shortcuts</a>.</p>
+			</section>
+
+			<section id="about">
+				<h2><span class="path">/</span>About</h2>
+				<p class="about">FRAME captures and edits screenshots entirely on your computer. No accounts, no uploads, no analytics, no network requests.</p>
+				<ul class="links">
+					<li><a href="https://github.com/revpixel/frame/issues/new?template=bug_report.yml" target="_blank" rel="noopener">Report a bug</a></li>
+					<li><a href="https://github.com/revpixel/frame/issues/new?template=feature_request.yml" target="_blank" rel="noopener">Request a feature</a></li>
+					<li><a href="https://github.com/revpixel/frame#readme" target="_blank" rel="noopener">Documentation</a></li>
+					<li><a href="https://github.com/revpixel/frame" target="_blank" rel="noopener">View source</a></li>
+					<li><a href="https://github.com/revpixel/frame/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy</a></li>
+				</ul>
+				<div class="diag">
+					<button class="btn" id="copy-diag" type="button">Copy diagnostic info</button>
+					<span class="note">Version, browser, OS and settings. Never URLs or page content. <a href="#" id="show-diag">Preview</a></span>
+				</div>
+				<pre class="diag-preview mono" id="diag-preview" hidden></pre>
+			</section>
+
+			<footer class="mono">Part of <a href="https://cyberdynenetwork.com/" target="_blank" rel="noopener">Cyberdyne Network</a></footer>
+		</div>
+		<div class="toast" id="toast" role="status" aria-live="polite"></div>
+	</body>
+</html>
