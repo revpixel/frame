@@ -1,17 +1,63 @@
-name: Feature request
-description: Suggest something FRAME should do.
-labels: [enhancement]
+name: ✨ Feature request
+description: Suggest an improvement to capturing, editing or saving screenshots.
+title: "[Feature]: "
+labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
-      value: FRAME is deliberately small. Requests that keep it a fast, local screenshot utility are the most likely to land.
+      value: |
+        Thanks for the idea! FRAME is deliberately small: **Screenshots. That's it.** Requests that keep it a fast, local, private screenshot tool are the most likely to land. Accounts, cloud uploads, sharing services, AI features and big editing suites are out of scope by design.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: What kind of request is this?
+      options:
+        - Capturing (full page, select area, visible, delay)
+        - A page or site that FRAME captures badly
+        - Result viewer (crop, redact, annotate)
+        - Saving, copying or filenames
+        - Settings or keyboard shortcuts
+        - Documentation
+        - Other
+    validations:
+      required: true
+
   - type: textarea
     id: problem
     attributes:
       label: What are you trying to do?
+      description: The task, and what gets in the way today.
+      placeholder: "When I capture ..., I have to ... because FRAME doesn't ..."
     validations:
       required: true
+
   - type: textarea
-    id: idea
+    id: proposal
     attributes:
-      label: What would help?
+      label: What would you like to happen?
+      description: Describe the change as simply as you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Workarounds you use today, or other ways to solve it.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Links, examples or mock-ups. Redact anything sensitive in screenshots.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched the existing issues for this request.
+          required: true
+        - label: Anything I attached has sensitive information redacted.
+          required: true

@@ -1,1 +1,11 @@
 blank_issues_enabled: false
+contact_links:
+  - name: 📖 README
+    url: https://github.com/revpixel/frame#readme
+    about: Every capture mode, editing tool, setting and keyboard shortcut, plus known limits.
+  - name: 🔒 Privacy
+    url: https://github.com/revpixel/frame/blob/main/PRIVACY.md
+    about: What FRAME stores, why it needs each permission, and why it makes no network requests.
+  - name: 🧭 Project page
+    url: https://frame.cyberdynenetwork.com
+    about: FRAME on Cyberdyne Network, with install options.
