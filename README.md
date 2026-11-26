@@ -70,7 +70,9 @@ Saving uses the browser's normal download / save dialog, and copying uses the st
 
 ## Install
 
-**From source** (until the Web Store listing is live):
+**[Add FRAME to Chrome](https://chromewebstore.google.com/detail/frame/illlabpbbmofgjmhkiglaknoeadmegng)** from the Chrome Web Store.
+
+**From source:**
 
 1. Download or clone this repository.
 2. Open `chrome://extensions` and turn on **Developer mode**.
